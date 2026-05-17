@@ -7,7 +7,8 @@ hl.monitor({
     mode = "2880x1800@120",
     position = "auto",
     scale = "1.5",
-    icc = "/home/scrimas/ICC Profiles/sRGB Color Space Profile.icm"
+    icc = "/home/scrimas/ICC Profiles/sRGB Color Space Profile.icm",
+    bitdepth = 10
 })
 
 -- Window and Workspace Gestures
