@@ -50,12 +50,12 @@ DockButton {
             acceptedButtons: Qt.NoButton
             onEntered: {
                 appListRoot.lastHoveredButton = root
-                appListRoot.buttonHovered = true
+                appListRoot.hoveredButton = root
                 lastFocused = appToplevel.toplevels.length - 1
             }
             onExited: {
-                if (appListRoot.lastHoveredButton === root) {
-                    appListRoot.buttonHovered = false
+                if (appListRoot.hoveredButton === root) {
+                    appListRoot.hoveredButton = null
                 }
             }
         }
@@ -128,7 +128,7 @@ DockButton {
                     delegate: Rectangle {
                         required property int index
                         radius: Appearance.rounding.full
-                        implicitWidth: (appToplevel.toplevels.length <= 3) ? 
+                        implicitWidth: (appToplevel.toplevels.length <= 3) ?
                             root.countDotWidth : root.countDotHeight // Circles when too many
                         implicitHeight: root.countDotHeight
                         color: appIsActive ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer0, 0.4)

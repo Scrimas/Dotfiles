@@ -1,4 +1,3 @@
-pragma ComponentBehavior: Bound
 import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Controls
@@ -18,20 +17,14 @@ Item {
     property real windowControlsHeight: 30
     property real buttonPadding: 5
 
+    property Item hoveredButton: null
     property Item lastHoveredButton: null
-    property bool buttonHovered: false
-    property bool requestDockShow: previewPopup.show
+    property bool requestDockShow: previewPopup.visible
 
     Layout.fillHeight: true
     Layout.topMargin: Appearance.sizes.hyprlandGapsOut
     implicitWidth: listView.implicitWidth
-
-    function popupCenterXForButton(button) {
-        if (!button || !root.QsWindow)
-            return 0;
-        return root.QsWindow.mapFromItem(button, button.width / 2, 0).x;
-    }
-
+    
     StyledListView {
         id: listView
         spacing: 2
@@ -62,46 +55,35 @@ Item {
 
     PopupWindow {
         id: previewPopup
-        property var appTopLevel: root.lastHoveredButton?.appToplevel
-
-        property bool shouldShow: (popupMouseArea.containsMouse || root.buttonHovered) && appTopLevel && appTopLevel.toplevels && appTopLevel.toplevels.length > 0
-
-        property bool show: false
-        property real cachedCenterX: 0
-
-        Connections {
-            target: root
-            function onLastHoveredButtonChanged() {
-                if (root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenterX = root.popupCenterXForButton(root.lastHoveredButton);
-            }
-            function onButtonHoveredChanged() {
-                if (root.buttonHovered && root.lastHoveredButton && root.QsWindow)
-                    previewPopup.cachedCenterX = root.popupCenterXForButton(root.lastHoveredButton);
-                updateTimer.restart();
-            }
-        }
-
+        property var appTopLevel: (root.hoveredButton || root.lastHoveredButton)?.appToplevel
+        
+        readonly property bool shouldShow: (root.hoveredButton != null || popupMouseArea.containsMouse) && appTopLevel && appTopLevel.toplevels.length > 0
+        
+        // Window visibility management
+        property bool active: false
         onShouldShowChanged: {
-            updateTimer.restart();
+            if (shouldShow) {
+                activeTimer.stop();
+                active = true;
+            } else {
+                activeTimer.restart();
+            }
         }
 
         Timer {
-            id: updateTimer
-            interval: 100
-            onTriggered: {
-                previewPopup.show = previewPopup.shouldShow;
-            }
+            id: activeTimer
+            interval: 210
+            onTriggered: previewPopup.active = false
         }
 
+        visible: active
+        
         anchor {
             window: root.QsWindow.window
             adjustment: PopupAdjustment.None
             gravity: Edges.Top | Edges.Right
             edges: Edges.Top | Edges.Left
         }
-
-        visible: popupBackground.opacity > 0
         color: "transparent"
         implicitWidth: root.QsWindow.window?.width ?? 1
         implicitHeight: popupMouseArea.implicitHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
@@ -112,33 +94,43 @@ Item {
             implicitWidth: popupBackground.implicitWidth + Appearance.sizes.elevationMargin * 2
             implicitHeight: root.maxWindowPreviewHeight + root.windowControlsHeight + Appearance.sizes.elevationMargin * 2
             hoverEnabled: true
-            x: previewPopup.cachedCenterX - width / 2
+            
+            // X position: Jump instantly to new position.
+            x: {
+                const itemCenter = root.QsWindow?.mapFromItem(root.lastHoveredButton, root.lastHoveredButton?.width / 2, 0);
+                return (itemCenter?.x ?? 0) - width / 2
+            }
 
             StyledRectangularShadow {
                 target: popupBackground
-                opacity: previewPopup.show ? 1 : 0
-                visible: opacity > 0
-                Behavior on opacity {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-                }
+                opacity: popupBackground.opacity
             }
 
             Rectangle {
                 id: popupBackground
                 property real padding: 5
-                opacity: previewPopup.show ? 1 : 0
-                visible: opacity > 0
+                
+                // Opacity fade
+                opacity: previewPopup.shouldShow ? 1 : 0
                 Behavior on opacity {
-                    animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
+                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
+
+                // Vertical slide movement: slides UP from 15px down when appearing
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Appearance.sizes.elevationMargin - (previewPopup.shouldShow ? 0 : 15)
+                Behavior on anchors.bottomMargin {
+                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                }
+
                 clip: true
                 color: Appearance.m3colors.m3surfaceContainer
                 radius: Appearance.rounding.normal
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: Appearance.sizes.elevationMargin
                 anchors.horizontalCenter: parent.horizontalCenter
-                implicitHeight: previewRowLayout.implicitHeight + padding * 2
-                implicitWidth: previewRowLayout.implicitWidth + padding * 2
+                
+                // Resizing behavior: grows from 0 to full size when active
+                implicitHeight: (previewPopup.active ? previewRowLayout.implicitHeight : 0) + padding * 2
+                implicitWidth: (previewPopup.active ? previewRowLayout.implicitWidth : 0) + padding * 2
                 Behavior on implicitWidth {
                     animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                 }
@@ -155,7 +147,6 @@ Item {
                         }
                         RippleButton {
                             id: windowButton
-                            Layout.fillHeight: true
                             required property var modelData
                             padding: 0
                             middleClickAction: () => {
@@ -196,25 +187,18 @@ Item {
                                         }
                                     }
                                 }
-                                Item {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    implicitHeight: screencopyView.height
-                                    implicitWidth: screencopyView.width
-                                    ScreencopyView {
-                                        id: screencopyView
-                                        anchors.centerIn: parent
-                                        captureSource: windowButton.modelData
-                                        live: true
-                                        paintCursor: true
-                                        constraintSize: Qt.size(root.maxWindowPreviewWidth, root.maxWindowPreviewHeight)
-                                        layer.enabled: true
-                                        layer.effect: OpacityMask {
-                                            maskSource: Rectangle {
-                                                width: screencopyView.width
-                                                height: screencopyView.height
-                                                radius: Appearance.rounding.small
-                                            }
+                                ScreencopyView {
+                                    id: screencopyView
+                                    captureSource: windowButton.modelData
+                                    live: true
+                                    paintCursor: true
+                                    constraintSize: Qt.size(root.maxWindowPreviewWidth, root.maxWindowPreviewHeight)
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: screencopyView.width
+                                            height: screencopyView.height
+                                            radius: Appearance.rounding.small
                                         }
                                     }
                                 }
