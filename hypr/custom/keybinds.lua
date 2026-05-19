@@ -23,3 +23,11 @@ hl.bind("CTRL + Print",
 -- Toggle Cheatsheet
 hl.bind("SUPER + KP_Divide", hl.dsp.global("quickshell:cheatsheetToggle"))
 hl.bind("SUPER + colon", hl.dsp.global("quickshell:cheatsheetToggle"))
+
+
+-- Right sidebar
+hl.bind("SUPER + A", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Toggle right sidebar" })
+hl.bind("SUPER + ALT + A", hl.dsp.global("quickshell:sidebarRightToggleDetach"))
+hl.bind("SUPER + B", hl.dsp.global("quickshell:sidebarLeftToggle"))
+hl.bind("SUPER + O", hl.dsp.global("quickshell:sidebarLeftToggle"))
+hl.bind("SUPER + N", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Toggle right sidebar" })
