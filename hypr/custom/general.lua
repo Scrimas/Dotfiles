@@ -36,24 +36,20 @@ hl.gesture({
 hl.config({
     gestures = {
         workspace_swipe_direction_lock = false
-    }
-})
-hl.config({
+    },
     decoration = {
         blur = {
-            enabled = true,
+            enabled = false,
             xray = false,
             popups = true
         },
         shadow = {
-            enabled = true,
+            enabled = false,
             range = 50,
             offset = "0 4",
             color = "rgba" .. "(" .. "00000027)"
         }
-    }
-})
-hl.config({
+    },
     input = {
         kb_layout = "fr",
         scroll_factor = 0.10,
@@ -65,21 +61,20 @@ hl.config({
         touchdevice = {
             enabled = true
         }
-    }
-})
-hl.config({
+    },
     misc = {
-        vrr = true
-    }
-})
-hl.config({
+        vrr = 1
+    },
     binds = {
         scroll_event_delay = 250
-    }
-})
---  unscale XWayland
-hl.config({
+    },
     xwayland = {
         force_zero_scaling = true
+    },
+    ecosystem = {
+        no_donation_nag = true
+    },
+    debug = {
+        vfr = true
     }
 })
