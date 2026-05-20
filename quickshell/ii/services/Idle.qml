@@ -3,6 +3,7 @@ import qs.modules.common
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 
 /**
  * A nice wrapper for date and time strings.
@@ -10,8 +11,7 @@ import Quickshell.Wayland
 Singleton {
     id: root
 
-    property alias inhibit: idleInhibitor.enabled
-    inhibit: false
+    property bool inhibit: false
 
     Connections {
         target: Persistent
@@ -33,23 +33,28 @@ Singleton {
         Persistent.states.idle.inhibit = root.inhibit;
     }
 
-    IdleInhibitor {
-        id: idleInhibitor
-        window: PanelWindow {
-            // Inhibitor requires a "visible" surface
-            // Actually not lol
-            implicitWidth: 0
-            implicitHeight: 0
-            color: "transparent"
-            // Just in case...
-            anchors {
-                right: true
-                bottom: true
-            }
-            // Make it not interactable
-            mask: Region {
-                item: null
-            }
+    Process {
+        id: inhibitProc
+        command: ["systemd-inhibit", "--what=handle-lid-switch", "--why=Keep system awake", "--mode=block", "sleep", "infinity"]
+    }
+
+    onInhibitChanged: {
+        inhibitProc.running = inhibit;
+    }
+
+    Component.onCompleted: {
+        inhibitProc.running = inhibit;
+    }
+
+    IpcHandler {
+        target: "idleService"
+
+        function toggle(): void {
+            root.toggleInhibit();
+        }
+
+        function setInhibit(value: bool): void {
+            root.toggleInhibit(value);
         }
     }
 }

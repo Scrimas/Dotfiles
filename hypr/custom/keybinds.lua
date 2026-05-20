@@ -31,3 +31,15 @@ hl.bind("SUPER + ALT + A", hl.dsp.global("quickshell:sidebarRightToggleDetach"))
 hl.bind("SUPER + B", hl.dsp.global("quickshell:sidebarLeftToggle"))
 hl.bind("SUPER + O", hl.dsp.global("quickshell:sidebarLeftToggle"))
 hl.bind("SUPER + N", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Toggle right sidebar" })
+
+-- Lid close
+hl.bind("switch:on:Lid Switch",
+    hl.dsp.exec_cmd(
+        [[jq -e '.idle.inhibit' ~/.local/state/quickshell/states.json >/dev/null && (hyprctl eval 'hl.config({ misc = { mouse_move_enables_dpms = false, key_press_enables_dpms = false } })'; hyprctl dispatch 'hl.dsp.dpms({ action = "disable" })')]]),
+    { locked = true }
+)
+hl.bind("switch:off:Lid Switch",
+    hl.dsp.exec_cmd(
+        [[hyprctl eval 'hl.config({ misc = { mouse_move_enables_dpms = true, key_press_enables_dpms = true } })'; hyprctl dispatch 'hl.dsp.dpms({ action = "enable" })']]),
+    { locked = true }
+)
