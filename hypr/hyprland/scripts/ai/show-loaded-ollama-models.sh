@@ -14,13 +14,13 @@ model_name_paths=()
 while [ "$#" -gt 0 ]; do
   case $1 in
     -h|--help)
-      echo 
+      echo
       echo " Identifies Ollama models running on this operating system by parsing running processes."
-      echo 
-      echo " Usage: $0 [options]"   
+      echo
+      echo " Usage: $0 [options]"
       echo
       echo " Options:"
-      echo "  -j, --json_output        Prints result as a json object. Other output disabled. (Default: false)"      
+      echo "  -j, --json_output        Prints result as a json object. Other output disabled. (Default: false)"
       echo "  -p, --port [port number] Specify Ollama Server port (Default: 11434)"
       echo "  -u, --ollama_url [url]   Specify Ollama Server URL (Default: http://localhost)"
       echo
@@ -46,7 +46,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-compare_running_models_and_modelfiles() { 
+compare_running_models_and_modelfiles() {
     json_match=()
     json_output=()
     local matching_models=()
@@ -59,9 +59,9 @@ compare_running_models_and_modelfiles() {
             fi
         done
     done
-    
+
     if [ -z "$json_out" ]; then
-        echo -e "\nModel Found: \n $(echo ${matching_models[*]} | jq '.' | sed s/[{}]//g) \n"        
+        echo -e "\nModel Found: \n $(echo ${matching_models[*]} | jq '.' | sed s/[{}]//g) \n"
     else
         local json_match="${matching_models[*]}"
         json_output=$(echo $json_match | jq -c -s .)
